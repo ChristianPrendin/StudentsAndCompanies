@@ -1,0 +1,692 @@
+\section{Overview}
+\label{sec:overview}%
+Here we represent an overview of how the entire S\&C architecture is composed of:
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/Overview.png}
+        \caption{S\&C Overview.}
+        \label{fig:CKB_overview}%
+    \end{center}
+\end{figure}
+
+\noindent Client side:
+\begin{itemize}
+    \item \textbf{WebApp:} Represents the User Interface of the system, providing access through a web application to the offered services such as registration, login, updating profile overview, creating internships, searching and applying for internships, creating tasks for candidates, submitting complaints or providing feedback. It’s responsible for all the User interactions, and it communicates with the main server through the Web Server, using secure protocols like HTTPS.
+\end{itemize}
+\noindent Server side:
+\begin{itemize}
+    \item \textbf{Web Server:} handles communication with Users, receiving and processing their inputs. Additionally, it provides load balancing for requests, distributing them among various replicas of the S\&C Server. It also manages the User sessions.
+    \item \textbf{S\&C Server:} the core of the system, contains most of the logic of the software and handles interactions between different components. It also coordinates the communication with the DBMS, triggers the recommendation algorithm through the External Tools API and sends notifications to the users. It serves as the primary server for the entire website and is replicated across multiple machines to handle a high volume of requests.
+    \item \textbf{DBMS Server:} stores data related to Users, Internships, Resumes, Recommendations, Complaints and Feedback. It acts as the repository for essential information.
+    \item \textbf{Mail Server:} is responsible for sending confirmation email when a new User registers on S\&C, enhancing the User registration process.
+    \item \textbf{External Tools API:} used to run the recommendation algorithm. It also takes feedback in inputs to reinforce the algorithm over time, ensuring better accuracy in the matching process.
+\end{itemize}
+
+\section{Component View}
+\label{sec:component_view}%
+
+\subsection{High Level Diagram}
+\label{subsec:high_level_diagram}%
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/HighLevel.png}
+        \caption{High Level Diagram.}
+        \label{fig:high_level_diagram}%
+    \end{center}
+\end{figure}
+
+\noindent In the figure above is the high level component diagram of S\&C where it’s represented the external components of S\&C and how they communicate with the S\&C server, in particular:
+\begin{itemize}
+    \item \textbf{WebApp}: serves as the external access point for Users, allowing communication with the S\&C Server through the Dashboard Interface—the sole means for Client-Server interaction from the User side. The S\&C Server can relay notifications, such as Student uploading overviews or Internship creation, to Users through the Notification Interface.
+    \item \textbf{DBMS:} is the storage repository for all User data, Internships, Feedback and Complaints. It communicates with the S\&C Server via the DBMS API, which is connected to the Model component.
+    \item \textbf{Mail Server:} responsible for sending registration confirmation emails, the Mail Server communicates with the S\&C Server using the Mail API interface. This interface is linked to the Registration Manager component, which oversees the User registration process..
+    \item \textbf{External Tools:} external application used for running and reinforcing a sophisticated recommendation algorithm. It communicates with the S\&C Server through the External Tools API, connecting to the Recommendation Manager component. The Recommendation Manager handles the notification process for the matching phase of the system.
+\end{itemize}
+
+\subsection{Low Level Diagram}
+\label{subsec:low_level_diagram}%
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/LowLevel.png}
+        \caption{Low Level Diagram.}
+        \label{fig:low_level_diagram}%
+    \end{center}
+\end{figure}
+
+\noindent The figure above represents the complete architecture of S\&C website with each components inside the S\&C Server:
+\begin{itemize}
+    \item \textbf{Dashboard Manager:} This fundamental component orchestrates all the communication between User and the S\&C website. Users communicate with the system through the Dashboard Interface, so the Dashboard Manager address all the requests to the right component, depending on the User's needs. 
+    \item \textbf{Model:} This component represents the dataset of the server, and it act as a mask to the database server, so every component have to interface with it to access data from DBMS, which will access it directly through the DBMS API. 
+    \item \textbf{Recommendation Manager:}  The component that handles everything about the recommendation phase of the system. It periodically triggers a new computation for finding new matches between students and internships, and it does that by using the External Tools API, which communicates directly with the system in which the computation resides. It also communicate with the model for retrieving all the information necessary to the user to visualize the correct recommendation list, each time there is a new request incoming from the Dashboard Manager. This component additionally communicates with the Profile Manager through the View Profile Interface, every time that a company, from it's recommendation list wants to check the profile overview of a Student.
+    \item \textbf{Registration Manager:} This components handles the registration of new Users on the system. The User when trying to create a new account interacts with the Dashboard Manager, which contacts the Registration Manager through the Registration interface. Then the Registration Manager handle the request and manages to contact the Mail Server through the Mail API, to send a confirmation email to the new User. Once this is done it uses the Model through the Model Interface for saving user's information on the DBMS.
+    \item \textbf{Login Manager:} This component handle the Login process for registered Users. When a User attempts to Login, the Dashboard Manager address the request to this component, which contacts the Model through the Model Interface to retrieve data from the DBMS and so authenticate the User. 
+    \item \textbf{Profile Manager:} Component that allows Students to create their profile overview. When a Student starts the process to complete it's profile, the Dashboard Manager forwards the requests to the Profile manager using the Profile Interface. The Profile Manager communicates with the Model component through the Model Interface to store new information in the DBMS. It also manage to retrieve Students information when a company wants to view the overview of a Student within the recommendation list.
+    \item \textbf{Internship Manager:} This component allow the Companies to create, modify and visualize internships. When a company wants to publish a new internship, interacts with the dashboard manager, which forwards the requests to the Internship Manager. This component manage to save new published internship, modify the status or retrieve information for internship search from the Model component, interacting with it via the Model Interface.
+    \item \textbf{Application Manager:} This is the main component of the selection phase of an internship. When a company wants to start preparing tasks or submit them to candidates, interacts with the Dashboard Manager, who forwards the requests to the Application Manager, who manage to interact with the Model through the Model Interface for saving information. It can also notify the candidates when the tasks are ready to be carried out, or results are ready, contacting the Notification Manager module through the ApplicNotif Interface.
+    \item \textbf{Complaints Manager:} This component handles the complaints related to an internship. When a User wants to file a complaint about an internship, interact with the Dashboard Manager, who forwards the requests to the Complaint Manager through the Complaint Interface, which needs to Notify the University of the Student related complaint, contacting the Notification Manager module through the InterviewNotif Interface. It can also store the complaints on the model for the purpose of reinforcing the algorithm.
+    \item \textbf{Notification Manager:} Component that handles each notification that has to be sent to the Users, in particular when a new match has been found from the recommendation algorithm, it sends a notification both to the Student and the Company related with that match; when the interview phase is completed, it sends the notification to all the candidates informing them wether they've been selected or not; when a new complaint is made from a company or a student, it notify the university that has to handle it. All the communication from other components to this are made through the InterviewNotif Interface, ComplNotif Interface or the Recommendation Interface, and it communicates with the web app through the Notification Interface..
+\end{itemize}
+
+\subsection{Recommendation Manager}
+\label{subsec:recommendation_manager}%
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/RecommendationManager.png}
+        \caption{Recommendation Manager.}
+        \label{fig:recommendation_manager}%
+    \end{center}
+\end{figure}
+
+\noindent The Recommendation Manager is composed by two other sub-components:
+
+\begin{itemize}
+    \item \textbf{Automated Trigger component:} This component is essential for ensuring the continuous and autonomous operation of the recommendation system. Its primary function is to periodically initiate the recommendation algorithm, which scans the database for new or updated profiles and internship postings. By doing so, the component guarantees that students and companies receive the most relevant and recent matches based on evolving criteria such as updated CVs, new internship opportunities, and feedback collected from previous experiences. This component interfaces directly with the External Tools API, responsible for executing the complex matching logic that considers various parameters, including skills, interests, and project domains.
+    \item \textbf{View Matches component:} The View Matches component retrieves the latest matches identified by the Automated Trigger and displays them through the user’s dashboard. For students, a list of internship opportunities that align with their skills and interests. For companies, potential candidates whose profiles closely match the requirements of their internship postings. Users can also filter and sort recommendations. Additionally, the View Matches component provides direct links to student profiles or internship details.
+\end{itemize}
+
+\subsection{Internship Manager}
+\label{subsec:internship_manager}%
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/InternshipManager.png}
+        \caption{Internship Manager.}
+        \label{fig:internship_manager}%
+    \end{center}
+\end{figure}
+
+\noindent The Internship Manager is made by the following components:
+
+\begin{itemize}
+    \item \textbf{View internship component:} The View Internship component provides a comprehensive interface for accessing and managing internship postings within the system. For students, the component acts as a searchable catalogue of available internships, with filtering and sorting options. This component pulls data directly from the DBMS through the Model Interface, ensuring real-time synchronization with the latest postings. It allows companies to view the number of applicants, monitor engagement, and update internship details if necessary. For students, each internship listing includes detailed descriptions, project requirements, and any associated benefits. Additionally, the View Internship component integrates with the Apply Internship subcomponent.
+    \item \textbf{Create internship component:} This component facilitates the creation and publication of new internship offers by companies. It provides a structured form that guides users through defining essential parameters, such as internship title, required skills, project description, duration, and compensation details. Once the form is completed, the Create Internship component validates the input to ensure completeness and consistency. It then interfaces with the DBMS through the Model component to store the new internship in the database. If errors are detected during the validation process, the component provides immediate feedback, allowing the user to correct any issues before submission.
+    \item \textbf{Modify internship component:} The Modify Internship component enables companies to update or delete existing internship postings. Users can access this component through the View Internship interface, selecting the internship they wish to edit. Changes made through the Modify Internship component are instantly propagated to the DBMS, ensuring all users view the most up-to-date information. 
+    \item \textbf{Apply internship component:} The Apply Internship component is central to the student experience on the platform. It allows students to submit applications for internships directly through the system. Upon clicking the “Apply” button, the component gathers the student’s profile data, CV, and any additional required documents before forwarding the application to the target company. Companies are notified of new applications via the Notification Manager, ensuring timely review and response. The Apply Internship component also includes mechanisms for students to withdraw applications if necessary, with relevant notifications sent to the company and the system updated accordingly.
+    \item \textbf{Create feedback component:} After an internship is completed, the Create Feedback component enables students and companies to provide feedbacks about their experience. Companies evaluate student performance, highlighting strengths and areas for improvement. Similarly, students can rate their experience with the company, providing insights into the quality of mentorship, project alignment, and overall satisfaction. This component compiles feedback into structured reports, which are stored in the DBMS. The feedback serves as valuable input for refining the recommendation algorithm, improving the accuracy of future matches by incorporating performance data and user satisfaction.
+    \item \textbf{View Candidates component:} This component allows companies to access and manage the list of students who have applied for their internships. Through an interactive dashboard, companies can view applicant profiles, download CVs, and review additional submitted documents. The component includes sorting and filtering tools. Additionally, it provides features for marking applicants as shortlisted, rejected, or accepted. Once candidates are selected, the component forwards their details to the Interview Manager, initiating the next phase of the recruitment process. Notifications are sent to the selected students, informing them of their application status.
+\end{itemize}
+
+\subsection{Profile Manager}
+\label{subsec:profile_manager}%
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/ProfileManager.png}
+        \caption{Profile Manager.}
+        \label{fig:profile_manager}%
+    \end{center}
+\end{figure}
+
+\noindent The Profile Manager is composed by the following components:
+
+\begin{itemize}
+    \item \textbf{View Profile component:} The View Profile component allows users to access and review profiles stored within the system. For students, this component displays their profile overview, including personal information, educational background, skills, and uploaded CVs. For companies, it provides access to student profiles that match internship postings or appear on recommendation lists. The component supports viewing profiles in detail and exporting them for offline review. The View Profile component integrates directly with the DBMS to ensure that profile data is current and reflective of the latest updates made by students.
+    \item \textbf{Update Profile component:} This component is designed to enable students to manage and update their profiles. Students can edit sections related to personal details, work experience, skills, and education. The Update Profile component performs real-time validation to ensure that all data entered adheres to format and completeness standards. Once submitted, the updated data is written to the DBMS via the Model component. The system also supports partial updates, allowing students to save progress and complete their profiles incrementally.
+\end{itemize}
+
+\subsection{Complaints Manager}
+\label{subsec:complaints_manager}%
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/ComplaintsManager.png}
+        \caption{Complaints Manager.}
+        \label{fig:complaints_manager}%
+    \end{center}
+\end{figure}
+
+\noindent The Complaints Manager is made by the following components:
+
+\begin{itemize}
+    \item \textbf{Create Complaint component:} The Create Complaint component allows users to file formal complaints about internships. This feature is available to both students and companies, providing a structured form to capture detailed descriptions of issues encountered during the internship process. The component sends complaints to the relevant university, which is notified through the Notification Manager. Complaints are logged in the DBMS, ensuring traceability and enabling further investigation if needed.
+    \item \textbf{Manage Complaints component:} This component facilitates direct communication between universities and users regarding complaints. It can manage a secure chat channel, allowing real-time interaction to resolve issues efficiently. And gives universities opportunity to resolve complaints.
+\end{itemize}
+
+\subsection{Application Manager}
+\label{subsec:application_manager}%
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/ApplicationManager.png}
+        \caption{Application Manager.}
+        \label{fig:application_manager}%
+    \end{center}
+\end{figure}
+
+\noindent The Application Manager is composed by the components:
+
+\begin{itemize}
+    \item \textbf{View Application:} The View Application component allows companies and students to access and monitor the status of ongoing applications. Companies can track candidates' progress through various selection stages, while students can check the status of their applications and receive updates on any required actions. This component ensures transparency and easy access to information regarding the selection processes.
+    \item \textbf{Create Task component:} The Create Task component is a key element of the selection process, enabling companies to design and assign practical exercises or technical assessments to candidates during the evaluation phase. This component assess students' technical skills and problem-solving abilities by simulating real-world scenarios or creating knowledge-based tests.
+    \item \textbf{Select Candidates component:} The Select Candidates component is crucial for the final phase of the selection process. This module allows companies to review task results, rank candidates based on performance, and finalize selections for internship offers or further interviews. It ensures that companies efficiently manage and evaluate large pools of applicants, streamlining decision-making and communication.
+    \item \textbf{Complete Tasks:} The Complete Tasks component gives candidates the ability to complete assigned tasks during the selection process. These tasks may include technical tests, projects, or practical exercises that must be finalized within a specified deadline. Companies can track task completion and evaluate the results, using them as criteria to select the most suitable candidates.
+\end{itemize}
+
+\section{Deployment View}
+\label{sec:deployment_view}%
+
+In this section, the Deployment diagram of the S\&C system will be shown, followed by a description of the components and their interactions:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=1\linewidth]{CD_DD/DeploymentDiagram.png}
+        \caption{Deployment Diagram.}
+        \label{fig:Deployment_Diagram}%
+    \end{center}
+\end{figure}
+
+\paragraph{Personal Computer:}
+STs and CPs can access to the S\&C system through their preferred browser. The browser will communicate with the Web Server. Users can also use every device that allows them to search on a web browser, such as mobile phone, tablet, ecc.
+
+\paragraph{Web Server:}
+The Web Server provides access to the Application Server to everyone that access to the S\&C system through a web browser. It doesn't handle any logic for the system, but it has the very important task to balance the load request incoming from the users. It also provide all the necessary file to have a right render of the page, such as HTML, CSS, JSON and JavaScript.
+
+\paragraph{Firewall:}
+It provides a way to limit the attack surface of any potential intruder by providing strict access rules.
+
+\paragraph{Application Server:}
+The application server contains all the logic at the base of the S\&C system. It communicates with the clients through HTTPS protocol managed by the Web Server. It also communicates with the Database Server through the DataBase Driver, with the Mail Server via SMTP  and with the Tool Server by using a dedicated API
+
+\paragraph{Database Server:}
+All the data about Users, internships and matching are stored in the Database Server and managed by MySQL. The Application Servers can retrieve information by contacting the model module, which contacts the physical Database via the Database driver.
+
+\paragraph{Email Server:}
+Once completed the registration process, Users have to confirm their profile by clicking on the link sent via Email by the Email Server. The application Server, after the registration process, contacts the Email Server through SMTP protocol to send the confirmation Email to the Users.
+
+\paragraph{Tool Server:}
+With the External Tool APIs, the Application Server can send useful information to the Tool Server, enhancing the precision of the algorithm. Furthermore the Application Server can decide to run the algorithm to retrieve other matches and send the notification to the related Users.
+
+\newpage
+\section{Runtime View}
+\label{sec:runtime_view}%
+
+\subsection{Log in to the system}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.75\linewidth]{DD/LaTeX/Images/RuntimeView/LogIn.png}
+        \caption{Runtime view for 'Log in to the system'.}
+        \label{fig:runtime_LogIn}%
+    \end{center}
+\end{figure}
+
+This sequence diagram illustrates the login process for different types of users. The Client accesses the S\&C website, initiating the login by submitting credentials (email and password). The WebServer forwards the request to the DashboardManager, which interacts with the LoginManager to validate the provided credentials. The LoginManager queries the Model to verify the user's information on the database. Depending on the user's type (Company, Student, or University), the system retrieves relevant data, such as published internships or recommended offers, and displays the appropriate homepage. In case of invalid credentials, an error message is shown, and the login form is presented again to the Client.
+
+\subsection{Log out from the system}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/LogOut.png}
+        \caption{Runtime view for 'Log out from the system'.}
+        \label{fig:runtime_LogOu}%
+    \end{center}
+\end{figure}
+
+This sequence diagram represents the logout process. The Client initiates the logout by sending a request to the WebServer. Upon receiving the request, the WebServer invalidates the user session, ensuring the client is logged out. The WebServer then redirects the Client to the login form, completing the process.
+
+\subsection{Register an account to S\&C}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/SignUp.png}
+        \caption{Runtime view for 'Register an account to S\&C'.}
+        \label{fig:runtime_SignUp}%
+    \end{center}
+\end{figure}
+
+This sequence diagram represents the process of user registration on the platform. The Client accesses the S\&C website and is presented with the login form. Upon selecting 'Create an Account,' the request is processed through the WebServer, DashboardManager, and RegistrationManager, which returns a signup form to the Client. The Client submits personal information, including name, surname, email, and password. The WebServer forwards the data through the DashboardManager to the RegistrationManager, which verifies the email’s uniqueness by querying the database. If the email is already linked to an account, an error message is sent back to the Client, and the login form is shown again. Otherwise, the system proceeds to send a confirmation email. Upon receiving a reply from the EmailServer, the new user credentials are saved in the database, and the Client is redirected to their homepage, completing the registration process.
+
+\subsection{View and update their profile}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=\linewidth]{DD/LaTeX/Images/RuntimeView/ViewAndUpdateTheirProfile.png}
+        \caption{Runtime view for 'View and update their profile'.}
+        \label{fig:runtime_ViewAndUpdateTheirProfile}%
+    \end{center}
+\end{figure}
+
+This sequence diagram illustrates the process through which a student can view and update their profile on the S\&C platform. Initially, the student accesses the update profile page via the WebServer. The WebServer forwards the request to the DashboardManager, which interacts with the ProfileManager (ViewProfile) component to retrieve user data from the Model by querying the database. The retrieved information is then displayed on the profile update page. If the student decides to update their profile, the changes are submitted to the WebServer, which processes the request through the DashboardManager. The update is handled by the ProfileManager (UpdateProfile) component, which validates the changes. If the format is correct, the new information is saved to the database, and the updated profile page is displayed. In case of an error in the format, the student receives an error message while remaining on the update profile page.
+
+\subsection{Search for internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/SearchInternship.png}
+        \caption{Runtime view for 'Search for internships'.}
+        \label{fig:runtime_SearchInternship}%
+    \end{center}
+\end{figure}
+
+This sequence diagram represents the process through which a student searches for internships on the S\&C platform. The student initiates the search by entering a keyword, which is sent to the WebServer. The WebServer forwards the request to the DashboardManager, which interacts with the InternshipManager (ViewInternship) to retrieve relevant internships from the database via the Model by querying the database. If internships matching the keyword are found, they are displayed to the student in the search results. If no matching internships exist, an error message is returned indicating that no results were found.
+
+\subsection{Apply for an internship}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/ApplyInternship.png}
+        \caption{Runtime view for 'Apply for an internship'.}
+        \label{fig:runtime_ApplyInternship}%
+    \end{center}
+\end{figure}
+
+This sequence diagram illustrates the process of applying for an internship on the S\&C platform. The student begins by requesting detailed information about a specific internship. This request is handled by the WebServer, which retrieves the relevant data from the DashboardManager and InternshipManager by querying the database through the Model. Once the internship details are displayed, the student proceeds to apply. The WebServer forwards the application request to the DashboardManager, which delegates it to the ApplyInternship component. The system validates the student's eligibility and, if successful, saves the application in the database. A notification is then sent to the company offering the internship via the NotificationManager. If the student is not eligible to apply, an error message is returned, informing them of the issue.
+
+\subsection{Monitor the status of their applications}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/MonitorStatusApplication.png}
+        \caption{Runtime view for 'Monitor the status of their applications'.}
+        \label{fig:runtime_MonitorStatusApplication}%
+    \end{center}
+\end{figure}
+
+This sequence diagram represents the process through which a student monitors the status of their internship applications. The student begins by requesting a list of their applications from the WebServer. The request is passed through the DashboardManager to the ApplicationManager (ViewProgress), which retrieves the relevant data by querying the database via the Model. If applications are found, they are displayed to the student on the homepage. The student can then select a specific application to view its current status. This triggers another query to fetch detailed information about that application, which is than presented on the application progress page. If no applications exist, an error message is returned, informing the student that no records are available.
+
+\subsection{Accept or reject internship offers}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/EvaluationInternshipOffers.png}
+        \caption{Runtime view for 'Accept or reject internship offers'.}
+        \label{fig:runtime_EvaluationInternshipOffers}%
+    \end{center}
+\end{figure}
+
+This sequence diagram illustrates the process by which a student accepts, or rejects internship offers on the S\&C platform. The student initiates the process by requesting a list of available offers. This request is forwarded by the WebServer through the DashboardManager to the ApplicationManager, which queries the database for matching offers via the model. If offers are available, they are displayed to the student. The student can then select a specific internship to view more details. This triggers a request to the InternshipManager to retrieve detailed information about the selected internship. If the student decides to accept the offer, the WebServer forwards the acceptance to the ApplyInternship component, which initiates the application process and updates the status in the database. Conversely, if the student rejects the offer, the system removes the application entry from the database, and a confirmation message is shown to the student. If no offers are found, the system returns an error message indicating the absence of available offers.
+
+\subsection{Complete questionnaires from companies}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/CompleteQuestionnaires.png}
+        \caption{Runtime view for 'Complete questionnaires from companies'.}
+        \label{fig:runtime_CompleteQuestionnaires}%
+    \end{center}
+\end{figure}
+
+This sequence diagram illustrates the process by which a student completes and submits questionnaires assigned by companies as part of an internship application. The student begins by checking the status of their applications through the WebServer. This request is forwarded through the DashboardManager to the ApplicationManager, which queries the database for relevant application information. If pending questionnaires are available, the student selects a specific task to complete. The WebServer processes this request by retrieving the task details from the database via the CompleteTasks component of the ApplicationManager. After filling out the questionnaire, the student submits the answers through the WebServer, triggering a process to save the responses in the database. A confirmation message is returned to the student, indicating successful submission. If no questionnaires are available, the student simply views the application progress page without further actions.
+
+\subsection{Provide feedback on completed internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/ProvideFeedbackOnCompletedInternships.png}
+        \caption{Runtime view for 'Provide feedback on completed internships'.}
+        \label{fig:runtime_ProvideFeedbackOnCompletedInternships}%
+    \end{center}
+\end{figure}
+
+The sequence diagram shows how a student provides feedback on a completed internship. First, the student requests a list of completed internships from the WebServer that contacts the DashboardManager and the InternshipManager, which queries the database via the model. If no completed internships are found, an error message is shown to the student. If internships exist, they are displayed on the student's homepage. The student selects an internship and views its details, which are retrieved from the Model by querying the database. The student then chooses to provide feedback and a form to submit a feedback is prompted to him. After the student submits the feedback, the WebServer sends the data to the DashboardManager, which saves it in the database. Finally, a confirmation message is sent back to the student.
+
+\subsection{File complaints about internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/FileComplaintsAboutInternships.png}
+        \caption{Runtime view for 'File complaints about internships'.}
+        \label{fig:runtime_FileComplaintsAboutInternships}%
+    \end{center}
+\end{figure}
+
+The sequence diagram illustrates the process for a student to file complaints about internships. Initially, the student requests a list of applied internships by sending a request to the WebServer, which queries the DashboardManager and the InternshipManager. The internships in progress are retrieved from the Model and database and displayed on the student's homepage. Than the student clicks on a specific application and details are retrieved and displayed on the student's progress page. The student then chooses to make a complaint about the internship. The WebServer forwards the request to the DashboardManager, which invokes the ComplaintManager to create a complaint form. The form is returned to the student via the WebServer and DashboardManager. The student submits the complaint with relevant details, which are stored in the database. After saving the complaint, the NotificationManager is triggered to send a notification to the student's university. The NotificationManager retrieves the university's email from the Model and sends the notification. Finally, the DashboardManager sends a confirmation message to the student, signaling the completion of the complaint process.
+
+\subsection{Create and publish internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/PublishInternship.png}
+        \caption{Runtime view for 'Create and publish internships'.}
+        \label{fig:runtime_PublishInternship}%
+    \end{center}
+\end{figure}
+
+The sequence diagram shows how a company creates and publishes an internship. First, the company requests to create an internship, and the WebServer forwards the request to the DashboardManager, which triggers the InternshipManager to present a form for the internship details. The company submits the internship information, and the system checks if the data is valid. If the data is valid, the internship is saved in the Model and database. The InternshipManager then informs interested students by notifying the RecommendationManager, which retrieves the list of interested students from the Model and sends notifications through the NotificationManager. Each student receives a notification about the new internship. Finally, a confirmation message is sent to the company, signaling the successful creation and publication of the internship. If the data is invalid, an error message is sent back to the company.
+
+\subsection{View and manage published internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/ManageInternships.png}
+        \caption{Runtime view for 'View and manage published internships'.}
+        \label{fig:runtime_ManageInternships}%
+    \end{center}
+\end{figure}
+
+The sequence diagram illustrates how a company can view and manage its published internships. First, the company retrieves internship details by providing the internship ID, which is processed by the WebServer and DashboardManager, eventually fetching the information from the Model and DBMS, and displaying it in the Internship View Page. If the company wants to update an internship, they submit the update request to the WebServer, which forwards it to the DashboardManager and the InternshipManager. The InternshipManager validates the changes. If the changes are valid, the new data is saved in the DBMS. If the company wants to delete the internship, they initiate the deletion process, which is handled by the DashboardManager and InternshipManager. The internship is removed from the database, and the company is redirected to the Company Home Page with confirmation of the deletion. If any updates or changes fail due to format issues, an error message is shown to the company.
+
+\subsection{View recommended students for internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/ViewRecommendedStudenst.png}
+        \caption{Runtime view for 'View recommended students for internships'.}
+        \label{fig:runtime_ViewRecommendedStudenst}%
+    \end{center}
+\end{figure}
+
+The sequence diagram shows the process where a company views recommended students for internships. Initially, the company retrieves internship details by providing the internship ID. The WebServer and DashboardManager process this request and fetch the relevant internship information from the Model and DBMS, displaying it on the Internship View Page. Next, the company requests a list of suggested students for the internship. This request is forwarded to the RecommendationManager, which retrieves the list of suggested students from the Model and DBMS. If there are suggested students, their details are displayed in the Internship View Page. If there are no suggested students, an error message is shown indicating that there are no suggested students for the internship.
+
+\subsection{Contact students for internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/ContactStudent.png}
+        \caption{Runtime view for 'Contact students for internships'.}
+        \label{fig:runtime_ContactStudent}%
+    \end{center}
+\end{figure}
+
+The sequence diagram illustrates the process where a company contacts students for internships. First, the company retrieves the student's profile by providing their email. The WebServer, DashboardManager, and ProfileManager fetch the student's information from the Model and DBMS, displaying it on the View Profile Page. After reviewing the profile, the company decides to invite the student for the internship. The WebServer forwards the invitation request to the DashboardManager, which calls the InternshipManager to handle the invitation process. The system validates the session, stores the invitation in the Model, and sends a notification to the student about the internship invitation. The student receives the notification, which includes details of the internship. The company is redirected to the Application Progress Page.
+
+\subsection{Accept student applications}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/AcceptSTApplication.png}
+        \caption{Runtime view for 'Accept student applications'.}
+        \label{fig:runtime_AcceptSTApplication}%
+    \end{center}
+\end{figure}
+
+The sequence diagram illustrates the process of a company managing internship applications. The company retrieves internship details through the WebServer, DashboardManager, InternshipManager, and Model, which interacts with the DBMS. The DashboardManager then displays the information. When reviewing applications, the company requests the list of applicants. This is fetched by the ApplicationManager, which queries the Model and DBMS to retrieve the data. The company can then review the student’s profile, with the ProfileManager retrieving student information from the DBMS. If the company accepts or rejects an application, the decision is passed through the WebServer, DashboardManager, and ApplicationManager. The Model updates the application status, and the NotificationManager notifies the student of the outcome. If no applications are available, the company receives an error .
+
+\subsection{Submit questionnaires for students}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/SubmitQuestionnaires.png}
+        \caption{Runtime view for 'Submit questionnaires for students'.}
+        \label{fig:runtime_SubmitQuestionnaires}%
+    \end{center}
+\end{figure}
+
+The sequence diagram illustrates the process of a company submitting questionnaires to students. The company begins by initiating a task creation request through the WebServer, which forwards it to the DashboardManager and then to the ApplicationManager. The ApplicationManager queries the Model to retrieve a list of students applying for internships from the DBMS, and this data is displayed on the company's homepage. Next, the company creates a new task and submits a form through the WebServer, which sends the submission to the DashboardManager and ApplicationManager. The form data is validated, and if valid, the questionnaires are saved in the DBMS. The NotificationManager then sends notifications to each student about the new questionnaires. If the data is invalid, the company is informed of the error.
+
+\subsection{Finalize the selection process}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/FinalizeSelectionProcess.png}
+        \caption{Runtime view for 'Finalize the selection process'.}
+        \label{fig:runtime_FinalizeSelectionProcess}%
+    \end{center}
+\end{figure}
+
+This sequence diagram illustrates the process of finalizing the selection of candidates for an internship. The company starts by viewing the list of candidates through the WebServer, which communicates with the DashboardManager and ApplicationManager to retrieve the list of students from the Model. The Model queries the DBMS for the list of applicants and sends the results back to be displayed on the company's homepage. Once the company selects the students, this information is forwarded to the ApplicationManager, which finalizes the selection in the DBMS. Notifications are then sent to both selected and rejected students via the NotificationManager. After the notifications are dispatched, the company's homepage is updated and displayed back to the company, completing the selection process.
+
+\subsection{Provide feedback on interns}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/ProvideFeedbackOnIntern.png}
+        \caption{Runtime view for 'Provide feedback on interns'.}
+        \label{fig:runtime_ProvideFeedbackOnIntern}%
+    \end{center}
+\end{figure}
+
+This sequence diagram illustrate the process for providing feedback on interns. The company begins by checking the application status through the WebServer, which forwards the request to the DashboardManager and the ApplicationManager to retrieve application details from the Model. The Model queries the DBMS for the application status and returns the relevant information, which is displayed on the company's progress page. The company initiates the feedback creation and is presented with a form. Next, the company submits the feedback for a selected intern by submitting the intern's email, company email, and feedback text. This request flows from the WebServer to the DashboardManager and the ApplicationManager, where the feedback is saved in the Model. The feedback is then stored in the DBMS. Once the feedback is saved, a confirmation message is displayed back to the company, completing the feedback submission process.
+
+\subsection{File complaints about students}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/FileComplaintsAboutStudents.png}
+        \caption{Runtime view for 'File complaints about students'.}
+        \label{fig:runtime_FileComplaintsAboutStudents}%
+    \end{center}
+\end{figure}
+
+This sequence diagram represents the process of filing a complaint, from a CP to a ST. The CP navigates to the application progress page of the student, so it can click on the button “create complaint”, which creates a requests that is sent to the DashboardManager and redirected to the complaint manager for retrieving the pop-up complaint form. The CP can now fill the form with all the necessary information, such as a brief description of what is not going as expected. The form is sento to the DashboardManager with all the necessary parameters (company email, student email and the text description), that redirects the request to the ComplaintManager module, which manage to save the complaint in the DBMS by making a request to the Model module, and also to create a new Complaint Notification that will be sent to the ST university, with a confirmation receipt for the CP.
+
+\subsection{Monitor the status of all internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/MonitorStatusOfAllInternships.png}
+        \caption{Runtime view for 'Monitor the status of all internships'.}
+        \label{fig:runtime_MonitorStatusOfAllInternships}%
+    \end{center}
+\end{figure}
+
+This sequence diagram describes how a UV can monitor the status of all of their student involved in internships. The UV on it’s home page, click on a view profile button related to a student, so a request of a ST profile is created and handled by the DashboardManager, that forwards it to the ProfileManager, which manages to retrieve the useful information on the DBMS by making a request to the Model module, who is going to create a query for the Database and send back to the ProfileManager all the needed information, adding them to the ViewProfilePage that will be sent directly to the University. Landed on that page, the University can click on the Application Progress Button for viewing the Application Progress Page. After the click, a request is sent to the DashboardManager, which forwards the request to the ApplicationManager, that through the model retrieve the data of the Student about his progression on the internship, adds them to the Application Progress Page and sends back the page to the university.
+
+\subsection{Handle complaints from students or companies}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/HandleComplaints.png}
+        \caption{Runtime view for 'Handle complaints from students or companies'.}
+        \label{fig:runtime_HandleComplaints}%
+    \end{center}
+\end{figure}
+
+This sequence diagram represents the process of handling any complaint. The university by clicking on the “complaint section” button generates a requests with the university’s email as parameter, to the DashboardManager, which forwards it to the ComplaintManager. After that, the ComplaintManager asks directly to the Model module to retrieve the data from the DBMS, and after receiving them, manages to dynamically create the page, that will be sent back to the university passing through the DashboardManager. At this point, the University can see the list of all complaints made from students or companies. In any case of complaints, if the University wants to resolve the problem, it should open the chat with the complaining part, and does that by clicking on the “open chat” button, which generates a request with the user email as a parameter, that is sent to the DashboardManager and redirected to the ComplaintManager. This module now has the task to notify the complaining part about a request of opening chat by the University, and does that by sending a request to the NotificationManager with the user email as a parameter, so this component can directly send to that user a NewChatRequest notification. When the problem is solved, the University can click on the “Close Complaint” button, so this generates a request to the DashboardManager with the complaintId as a parameter, which forwards it directly to the ComplaintManager, that manage to save the status of the complaint on the DBMS by contacting the Model module.
+
+\subsection{Cancel problematic internships}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/CancelProblematicInternships.png}
+        \caption{Runtime view for 'Cancel problematic internships'.}
+        \label{fig:runtime_CancelProblematicInternships}%
+    \end{center}
+\end{figure}
+
+This sequence diagram represents the process of canceling an internship. When a university is not able to solve a complaint by chatting with the complained part, it can decide to cancel the internship. To do that, the University has to click on the “Cancel Internship” button present on the ManageComplaint page, so this generates a request with the applicationId that is sent to the DashboardManager, that forwards the request to the ComplaintManager, which has the tasks of deleting the relation between the student and the internship on the DBMS by contacting the Model module, and also to notify both the student and the company about the cancellation. For doing so, the ComplaintManager has to send a request to the NotificationManager, which manages to directly send the notification to both parts to inform them about the interruption.
+
+\subsection{Collect feedback from companies and students to improve matching}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/CollectFeedbackToImprove.png}
+        \caption{Runtime view for 'Collect feedback from companies and students to improve matching'.}
+        \label{fig:runtime_CollectFeedbackToImprove}%
+    \end{center}
+\end{figure}
+
+This sequence diagram shows flow of collecting feedbacks from the users and improving the recommendation process. Periodically the subcomponent of the RecommendationManager, the AutomatedTrigger, checks for new feedback by creating a request that is sent to the Model. If new feedbacks are found, those are sent to the External Tool Server for retraining the algorithm.
+
+\subsection{Notify users about a new match}
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{DD/LaTeX/Images/RuntimeView/NotifyUserAboutANewMatch.png}
+        \caption{Runtime view for 'Notify users about new matches'.}
+        \label{fig:runtime_NotifyMatches}%
+    \end{center}
+\end{figure}
+
+This sequence diagram shows how the Users are notified about a new matching. Periodically, the subcomponent AutomatedTrigger of the RecommendationManager check for new profiles by creating a request to the Model module. If new profiles were inserted after the last check, the DBMS return to the model all the tuples of profiles that were inserted, resending them to the AutomatedTrigger. After that, the component can proceed to trigger the algorithm on the External Tool Server by sending to it the list of new users profiles, so the algorithm runs and the output is sent back to the Automated Trigger. Now the trigger is left with the only task to notify the users involved in the new matchings, and does that by creating a request to the NotificationManager, with both student and company email as parameters. If at the initial query of checking for new profiles returns null, that means that no new profiles were inserted from the last check, so there is no reason to run again the algorithm.
+
+\newpage
+\section{Component Interfaces}
+\label{sec:component_interfaces}%
+\begin{itemize}
+    \item \textbf{\textbf{WebServer} }(contains all the interfaces belonging to other managers, apart from NotificationManager and Model)
+    \begin{itemize}
+
+\item Request(login)
+\item AddUserToTheSession(\textit{String} email, \textit{String} password)
+\item Logout()
+\item GoToUpdateProfilePage()
+\item GetUserFromSession()
+
+\end{itemize}
+
+    \item \textbf{\textbf{DashboardManager}} (contains all the interfaces belonging to other managers, apart from NotificationManager and Model)
+
+    \item \textbf{\textbf{Model}}
+    \begin{itemize}
+
+\item CheckCredentials(\textit{String} email, \textit{String} password)
+\item GetPublishedInternships(\textit{String} email)
+\item GetStudentRecommendedInternships(\textit{String} email)
+\item GetUniversityEngagedStudents(\textit{String} email)
+\item CheckEmail(\textit{String} email)
+\item SaveNewUserCredentials(String name, \textit{String} surname, \textit{String} email, \textit{String} password)
+\item GetUser(\textit{String} email)
+\item SaveChanges(\textit{String} email, \textit{String} field, \textit{String} content)
+\item GetInternshipFromSearch(\textit{String} keyword)
+\item GetInternshipInformation(\textit{String} internshipId)
+\item SaveApplyRequest(\textit{String} email, \textit{String} password)
+\item GetInternshipCompany(internshipId)
+\item GetStudentApplicaitions(\textit{String} email)
+\item GetApplicationStatus(\textit{String} applicationId)
+\item GetStudentOffers(\textit{String} email)
+\item StartApplication(\textit{String} email, \textit{String} internshipId)
+\item RemoveApplication(\textit{String} email, \textit{String}  internshipId)
+\item SelectTask(\textit{String} taskId)
+\item SaveAnswers(\textit{String} taskId, \textit{List<String>} answers)
+\item GetCompletedInternships(\textit{String} email)
+\item SaveFeedback(\textit{String} email, \textit{String} internshipId, \textit{String} text)
+\item GetAppliedInternship(\textit{String} email)
+\item SaveComplaintOnInternship(\textit{String} email, \textit{String} internshipId, \textit{String} text)
+\item SaveComplaint(\textit{String} companyEmail, \textit{String} studentEmail, \textit{String} text)
+\item GetStudentUniversity(\textit{String} email)
+\item SaveNewInternship(\textit{String} companyEmail, \textit{String} name,  \textit{String} applicationDomain, \textit{String} tasks, \textit{String} technologies, \textit{String}  terms)
+\item GetInterestedStudents(\textit{String} applicationDomain, \textit{String} tasks, \textit{String} technologies, \textit{String}  terms)
+\item SaveChanges(\textit{String} internshipId, field, content)
+\item RemoveInterneship(\textit{String} internshipId)
+\item GetSuggestedStudents(\textit{String} internshipId)
+\item SaveInvitation(\textit{String} sutendEmail, \textit{String} internshipId)
+\item GetApplyRequest(\textit{String} internshipId)
+\item GetStudentInformation(\textit{String} email)
+\item GetStudentsApplying()
+\item SaveQuestionnaires(companyEmail, studentEmail, questions)
+\item ViewCandidates(\textit{String} internshipId)
+\item FinalizeInternshipSelection(\textit{String} internshipId)
+\item SaveFeedbackOnIntern(\textit{String} studentEmail, \textit{String} companyEmail, \textit{String} txt)
+\item SaveComplaintOnIntern(\textit{String} companyEmail, \textit{String} studentEmail, \textit{String} text)
+\item GetOpenComplaints(\textit{String} universityEmail)
+\item ResolveComplaint(\textit{String} complaintId)
+\item CancelInternship(\textit{String} applicationId)
+\item CheckNewFeedback()
+\item CheckNewProfiles()
+\end{itemize}
+
+
+    \item \textbf{\textbf{ViewProfile}}
+    \begin{itemize}
+
+\item SelectUser(\textit{String} email)
+
+\end{itemize}
+
+
+    \item \textbf{\textbf{LoginManager}}
+\begin{itemize}
+        \item Login(\textit{String} email, \textit{String} password)
+\end{itemize}
+
+    \item \textbf{\textbf{RegistrationManager}}
+\begin{itemize}
+        \item CreateAnAccount()
+        \item Registration(\textit{String} name, \textit{String} surname, \textit{String} email, \textit{String} password)
+\end{itemize}
+
+    \item \textbf{\textbf{EmailServer}}
+\begin{itemize}
+        \item SendEmail(\textit{String} email)
+\end{itemize}
+
+    \item \textbf{\textbf{ProfileManager}}
+\begin{itemize}
+        \item SelectUser(\textit{String} email)
+        \item UpdateProfile(\textit{String} email, \textit{String} field, \textit{String} content)
+        \item ValidateChanges(\textit{String} field, \textit{String} content)
+\end{itemize}
+
+    \item \textbf{\textbf{InternshipManager}}
+\begin{itemize}
+
+
+
+    \item SearchInternship(\textit{String} keyoword)
+    \item Apply(\textit{String} internshipId)
+    \item Accept(\textit{String} email, \textit{String} internshipId)
+    \item Reject(\textit{String} email, \textit{String} internshipId)
+    \item ProvideFeedback(\textit{String} internshipId)
+    \item CreateNewFeedback(\textit{String} email, \textit{String} internshipId, \textit{String} text)
+    \item CreateInternship()
+    \item PublishNewInternship(\textit{String} name, \textit{String} applicationDomain, \textit{String} tasks, \textit{String} technologies, \textit{String}  terms)
+    \item UpdateInternship(\textit{String} internshipId, \textit{String} field, \textit{String} content)
+    \item DelelteInternship(\textit{String} internshipId)
+    \item Invite(\textit{String} email)
+\end{itemize}
+
+    \item \textbf{\textbf{ApplicationManager}}
+\begin{itemize}
+        \item SubmitQuestionnaire(\textit{List<String>} answers)
+        \item CreateNewTask(\textit{List<String>} studentEmails)
+        \item SelectStudents(\textit{List<String>} studentEmails)
+        \item CreateFeedbackOnIntern(\textit{String} studentEmail)
+        \item CreateNewFeedbackOnIntern(\textit{String} studentEmail, \textit{String} companyEmail, \textit{String} txt)
+\end{itemize}
+
+    \item \textbf{\textbf{ComplaintManager}}
+\begin{itemize}
+        \item MakeComplaintOnInternship(\textit{String} internshipId)
+        \item CreateNewComplaintOnInternship(\textit{String} email, \textit{String} internshipId, \textit{String} text)
+        \item MakeComplaintOnIntern(\textit{String} studentEmail)
+        \item CreateNewComplaintOnIntern(\textit{String} companyEmail, \textit{String} studentEmail, \textit{String} text)
+        \item OpenChat(\textit{String} studentEmail)
+\end{itemize}
+
+    \item \textbf{\textbf{RecommendationManager}}
+\begin{itemize}
+        \item InformInterestedStudents(\textit{String} applicationDomain, \textit{String} tasks, \textit{String} technologies, \textit{String}  terms)
+        \item NewMatches(\textit{})
+\end{itemize}
+
+\end{itemize}
+
+\begin{itemize}
+    \item \textbf{\textbf{ExternalToolServer}}
+\begin{itemize}
+    \item AddNewFeedbacks(\textit{List<String>} feedbacks)
+    \item AddNewProfiles(List<Student> profiles)
+    \end{itemize}
+
+    \item \textbf{\textbf{NotificationManager}}
+\begin{itemize}
+        \item NewApplyNotification(\textit{String} email, \textit{String} internshipId)
+        \item NewComplaintNotification(\textit{String} studentEmail, \textit{String} internshipId)
+        \item NewComplaintNotification(\textit{String} companyEmail, \textit{String} studentEmail)
+        \item NewInternshipNotification(\textit{String}  companyName, \textit{String} internshipName, \textit{String} applicationDomain, \textit{String} tasks, \textit{String} technologies, \textit{String}  terms)
+        \item NewInviteNotification(\textit{String} studentEmail, \textit{String} internshipId)
+        \item NewQuestionnairesNotification(\textit{String} studentEmail)
+        \item NewSelectionNotification(\textit{String} studentEmail)
+        \item NewRejectionNotification(\textit{String} studentEmail)
+        \item NewChatRequestNotification(String email)
+        \item NewCancelInternshipNotification(\textit{String} internshipId)
+        \item NewMatchNotification(\textit{String} studentEmail, \textit{String} companyEmail)
+\end{itemize}
+
+\end{itemize}
+
+
+\section{Selected Architectural Styles and Patterns}
+\label{sec:selected_Srchitectural_styles_patterns}%
+This section describes the key architectural styles and patterns chosen for the development of the system. The architecture of the application is structured to ensure scalability, maintainability, and ease of development. The three primary patterns implemented are the 3-tier architecture, Model-View-Controller (MVC) and the use of APIs to facilitate communication between components.
+
+\subsection{3-tier Architecture}
+The system uses a 3-tier architecture so the application is divided into three layers:
+\begin{itemize}
+    \item \textbf{Presentation Layer:} This layer handles the user interface (UI) and is responsible for interacting with the users. It receives user input, sends requests to the application layer, and displays the results.
+    \item \textbf{Application Layer:} Also known as logic layer, this component processes the input from the presentation layer, applies the necessary logic, and interacts with the data layer.
+    \item \textbf{Data Layer:} The data layer is responsible for managing the database and performing CRUD (Create, Read, Update, Delete) operations. It provides data to the application layer as requested.
+\end{itemize}
+This architectural style enhances modularity and allows each layer to be developed and maintained independently, ensuring better scalability and fault isolation.
+
+\subsection{Model-View-Controller (MVC)}
+The application follows the Model-View-Controller (MVC) pattern to separate concerns and improve code organization. The application is divided into three logical components:
+\begin{itemize}
+    \item \textbf{Model:} Represents the data and the business logic of the application. It responds to requests for information and updates the state of the application.
+    \item \textbf{View:} Responsible for presenting data to the user. The view receives data from the model and displays it to the user in a suitable format.
+    \item \textbf{Controller:} Manages user input and interacts with the model. It processes incoming requests, executes the appropriate logic, and returns the result through the view.
+\end{itemize}
+This pattern ensures separation of concerns, making the codebase easier to manage and extend.
+
+\subsection{APIs}
+The system relies on APIs (Application Programming Interfaces) to facilitate communication between different modules and external services. APIs are used to:
+\begin{itemize}
+    \item Enable interaction between the frontend and backend systems.
+    \item Integrate with third-party tools and external databases.
+\end{itemize}
+APIs provide a standardized way to access application logic, ensuring modularity, reusability, and flexibility in integrating new features.
+
+\section{Other Design Decisions}
+\label{sec:other_design_decisions}%
+This section explains other design decisions that have been made to improve different aspects of the system.
+
+\subsection{Availability}
+Ensuring high availability is crucial for maintaining uninterrupted access to the system. Redundancy, load balancing, and failover mechanisms are implemented to minimize downtime and handle unexpected failures. The system is designed to operate across multiple servers and data centers, providing resilience against localized outages.
+
+\subsection{Scalability}
+The architecture is designed to scale horizontally by adding more servers or services as the user base grows. Microservices and containerization are employed to allow seamless scaling of individual components. This ensures the system can handle increasing workloads without significant redesign.
+
+\subsection{Data Storage}
+A distributed database system is used to manage large volumes of data while ensuring fault tolerance and data consistency. Replication strategies are implemented to enhance data durability and performance.
+
+\subsection{Security}
+Security measures are embedded at every level of the architecture. Data encryption and secure communication protocols (such as HTTPS) are part of the strategy to protect sensitive information. Role-based access control is used to restrict access to specific parts of the system, ensuring that only authorized users can perform certain actions.

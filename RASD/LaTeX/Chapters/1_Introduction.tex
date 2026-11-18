@@ -1,0 +1,286 @@
+Today, enriching our CVs to give us more opportunities in the job world became a very important challenge. 
+Fortunately, many universities have contact with several companies that offer students many opportunities to join internships.
+This platform facilitates the contact between companies that need students for internships and students interested in enriching their CVs.
+
+S\&C not only connects the two sides, it also helps them to become attractive to each other, providing advice: to students during the registration and upload of their CVs, to the companies during the process of publishing internships.
+
+Moreover S\&C provides a recommendation service that advertises internships to potentially interested students, and notifies companies about the availability of students CVs corresponding to their needs.
+
+\section{Purpose}
+\label{sec:purpose}%
+The purpose of this document is to provide:
+\begin{itemize}
+    \item a full and detailed description of the S\&C platform to enable developers to                   implement requirements;
+    \item a potential contract between supplier and customer;
+    \item a clear and unambiguous description of the high-level functionalities and                   system goals that can allow customers to verify if the system meets                               expectations.
+\end{itemize}
+
+\newpage
+
+\subsection{Goals}
+\label{subsec:goals}%
+\newcounter{g}
+\setcounter{g}{1}
+\newcommand{\cg}{\theg\stepcounter{g}}
+
+Below there is a table that lists all the goals of the S\&C system:
+\begin{center}
+    \begin{longtable}{ |l|p{0.9\linewidth}| }
+        \hline
+        \textbf{ID} & \textbf{Description}                                                                   \\
+        \hline
+        G\cg        &   Allow companies to post their internship opportunities\\
+        \hline
+        G\cg        &   Allow students to search for available internships\\
+        \hline
+        G\cg        &  Notify students when an internship that might be of interest to them is posted\\
+        \hline
+        G\cg        &   Notify companies when a student matching their needs becomes available\\
+        \hline
+        G\cg        &  Provide tools for both companies and students to manage the selection process\\
+        \hline
+        G\cg        &  Collect feedback from students and companies to improve the matchmaking process\\
+        \hline
+        G\cg        &  Provide suggestions for companies to improve internship descriptions and for students to improve their resumes\\
+        \hline
+        G\cg        &  Allow all parties to monitor the status of the matchmaking process and the assigned internship\\
+        \hline
+        G\cg        &  Allow universities to monitor internships and handle any problems\\
+        \hline
+        \caption{Goals table.}
+        \label{tab:goals_tab}%
+    \end{longtable}
+\end{center}
+
+\section{Scope}
+\label{sec:scope}%
+In the S\&C platform, there are three main participants: students, companies, and universities.
+
+Students can register on the platform by filling in some questionnaires and uploading their CVs. 
+
+Companies can publish new internships with the corresponding information about domain, topics, technologies adopted ecc.
+
+Students can apply for internships.
+
+The university monitors the situation of internships to handle complaints.
+
+\newpage
+
+\subsection{World Phenomena}
+\label{subsec:world_phenomena}%
+\newcounter{wp}
+\setcounter{wp}{1}
+\newcommand{\cwp}{\thewp\stepcounter{wp}}
+\begin{center}
+    \begin{longtable}{ |l|p{0.8\linewidth}| }
+        \hline
+        \textbf{ID} & \textbf{Description}                                                \\
+        \hline
+        WP\cwp      & The Company wants to publish its internships\\
+        \hline
+        WP\cwp      & The Student wants to upload his information \\
+        \hline
+        WP\cwp      & The Student wants to look for available internships \\
+        \hline
+        WP\cwp      & The Student wants to apply for an internship \\
+        \hline
+        WP\cwp      & The Company wants to offer an internship to a student \\
+        \hline
+        WP\cwp      & The Company wants to accept a student for an internship \\
+        \hline
+        WP\cwp      & The Company wants to interview a student \\
+        \hline
+        WP\cwp      & The Student wants to monitor application status \\
+        \hline
+        WP\cwp      & The Company wants to make a complaint \\
+        \hline
+        WP\cwp      & The Student wants to make a complaint \\
+        \hline
+        WP\cwp      & The University wants to handle complaints \\
+        \hline
+        WP\cwp      & The Company wants to submit questionnaires to students \\
+        \hline
+        WP\cwp      & The Student wants to respond to questionnaires \\
+        \hline
+        WP\cwp      & The company makes a final selection after all interviews \\
+        \hline
+        \caption{World Phenomena.}
+        \label{tab:worldph_tab}%
+    \end{longtable}
+\end{center}
+
+\subsection{Shared phenomena}
+\label{subsec:shared_phenomena}%
+\newcounter{sp}
+\setcounter{sp}{1}
+\newcommand{\csp} {\thesp\stepcounter{sp}}
+\begin{center}
+    \begin{longtable}{ |l|p{0.6\linewidth}|l|l|}
+        \hline
+        \textbf{ID} & \textbf{Description} & \textbf{Controller} & \textbf{Observer} \\
+        \hline
+        SP\csp      & The Company logs in his account in the S\&C system & CP         & S\&C           \\
+        \hline
+        SP\csp      &The Company logs out of his account from the S\&C system & CP         & S\&C           \\
+        \hline
+        SP\csp      & The Student creates an account in the S\&C system  & ST         & S\&C           \\
+        \hline
+        SP\csp      & The Student logs in his account in the S\&C system  & ST         & S\&C           \\
+        \hline
+        SP\csp      & The Student logs out of his account from the S\&C system  & ST         & S\&C           \\
+        \hline
+        SP\csp      & The Company sets the domain for the internship  & CP         & S\&C\\
+        \hline
+        SP\csp      & The Company sets the topics for the internship & CP         & S\&C           \\
+        \hline
+        SP\csp      & The Company sets the technologies adopted in their project  & CP         & S\&C           \\
+        \hline
+        SP\csp      & The Company sets the terms of the internship  & CP         & S\&C           \\
+        \hline
+        SP\csp      & The Company publish its internship  & CP         & S\&C           \\
+        \hline
+        SP\csp      & The Company checks his published internships  & CP & S\&C \\
+        \hline
+        SP\csp      & The Student fills the experiences form  & ST         & S\&C           \\
+        \hline
+        SP\csp      & The Student fills the skills form  & ST & S\&C           \\
+        \hline
+        SP\csp      & The Student fill the attitudes form  & ST & S\&C  \\
+        \hline
+        SP\csp      & The Student upload his CV on the system  & ST& S\&C \\
+        \hline
+        SP\csp      & The Student visualize his profile overview  & ST         & S\&C           \\
+        \hline
+        SP\csp      & The Students check for internship with keyword searching  & ST         & S\&C           \\
+        \hline
+        SP\csp      & The Students check for internship in his recommendation list  & ST         & S\&C           \\
+        \hline
+        SP\csp      & The Student apply for an internship & ST& S\&C \\
+        \hline
+        SP\csp      & The Company check for students in his recommendation list  & CP & S\&C          \\
+        \hline
+        SP\csp      & The Company contacts a student for an internship  & CP         & S\&C    \\
+        \hline
+        SP\csp      & The Company accept an application for an internship & CP & S\&C           \\
+        \hline
+        SP\csp      & The Student accept an offer for an internship  & ST         & S\&C    \\
+        \hline
+        SP\csp      & The Company creates questionnaires to be submitted to internship applicants  & CP & S\&C           \\
+        \hline
+        SP\csp      & The Student completes questionnaires or tasks given to him  & ST         & S\&C           \\
+        \hline
+        SP\csp      & The Company finalize the selection and submit it to the system  & CP & S\&C           \\
+        \hline
+        SP\csp      & The Company fills the feedback form  & CP & S\&C \\
+        \hline
+        SP\csp      & The Students fills the feedback form  & ST & S\&C \\
+        \hline
+        SP\csp      & The Company makes a complaint about a student & CP & S\&C           \\
+        \hline
+        SP\csp      & The Student makes a complaint about an internship  & ST & S\&C           \\
+        \hline
+        SP\csp      & The university monitors the status of an internship  & ST & S\&C           \\
+        \hline
+        SP\csp      & The University handle a complaint from the Company & UV & S\&C \\
+        \hline
+        SP\csp      & The University handle a complaint from the Student & UV & S\&C \\
+        \hline
+        SP\csp      & The University interrupt an internship  & UV & S\&C \\
+        \hline
+        SP\csp      & S\&C adds the internship to the Company’s Internship list  & S\&C & CP \\
+        \hline
+        SP\csp      & S\&C informs Companies about the availability of students corresponding to their needs  & S\&C & CP      \\
+        \hline
+        SP\csp      & S\&C informs Students about an internship offer  & S\&C & ST      \\
+        \hline
+        SP\csp      & S\&C informs Students about an internship that might interest them & S\&C & ST \\
+        \hline
+        SP\csp      & S\&C informs the Company about a student's application for an internship  & S\&C & CP           \\
+        \hline
+        SP\csp      & S\&C informs the Student about an internship acceptance  & S\&C         & ST           \\
+        \hline
+        SP\csp      & S\&C informs the Company about an internship acceptance  & S\&C         & CP           \\
+        \hline
+        SP\csp      & S\&C keeps track of the responses submitted by the students  & S\&C        & ST      \\
+        \hline
+        SP\csp      & S\&C informs the Students that they’ve been selected or rejected  & S\&C        & ST      \\
+        \hline
+        SP\csp      & S\&C collect feedback and suggestions from Students  & S\&C         & ST           \\
+        \hline
+        SP\csp      & S\&C collect feedback and suggestions from Company & S\&C & CP \\
+        \hline
+        SP\csp      & S\&C collect complaints from Students  & S\&C & ST \\
+        \hline
+        SP\csp      & S\&C collect complaints from Company  & S\&C & CP \\
+        \hline
+        \caption{Shared Phenomena.}
+        \label{tab:sharedph_tab}%
+    \end{longtable}
+\end{center}
+
+
+\section{Definitions, Acronyms, Abbreviations}
+\label{sec:definitions_acronyms_abbreviations}%
+
+\subsection{Definitions}
+\label{subsec:definitions}%
+\begin{itemize}
+\item \textbf{Internship:} Temporary work position offered by a company for students.
+\item \textbf{Matchmaking:} This term is central to the operation of the S\&C system. It describes the key process that matches students with internship opportunities, distinguishing the system from a simple job search platform.
+\end{itemize}
+
+
+\subsection{Acronyms}
+\label{subsec:acronyms}%
+\begin{itemize}
+    \item \textbf{RASD:} Requirements Analysis \& Specification Document 
+    \item \textbf{UI:} User Interface
+    \item \textbf{UML:} Unified Modelling Language
+    \item \textbf{API:} Application Programming Interface
+    \item \textbf{S\&C:} Students \& Companies
+    \item \textbf{CV:} Curriculum Vitae
+    \item \textbf{GX:} Goal X
+    \item \textbf{DAX:} Domain Assumption X 
+    \item \textbf{WPX:} World Phenomena X
+    \item \textbf{SPX:} Shared Phenomena X
+    \item \textbf{RX:} Requirement X
+    \item \textbf{UCX:} Use Case X
+\end{itemize}
+
+
+\subsection{Abbreviations}
+\label{subsec:abbreviations}%
+\begin{itemize}
+    \item \textbf{ST:} Student
+    \item \textbf{CP:} Company
+    \item \textbf{UV:} University
+\end{itemize}
+
+
+\section{Revision history}
+\label{sec:revision_history}%
+\begin{itemize}
+    \item \textbf{Version 1.0} - 22/12/2024
+\end{itemize}
+
+
+\section{Reference Documents}
+\label{sec:reference_documents}%
+The document is based on the following materials:
+\begin{itemize}
+    \item Specification Document of the RASD and DD assignment of the Software Engineering II course a.a. 2024/25
+    \item Slides of the course on WeBeep
+    \item IEEE Standard Documentation For RASD 
+\end{itemize}
+
+\newpage
+
+\section{Document Structure}
+\label{sec:document_structure}%
+The document is divided into six sections, each with its unique focus, as outlined below.
+\paragraph{Introduction:} The first section provides a brief overview of the project, presenting its objectives, purposes, and motivations, along with a concise analysis of global and shared phenomena. It also highlights the goals to be achieved through its development and includes a glossary of abbreviations and definitions essential for understanding the problem.
+\paragraph{Overall Description:} The second section offers a comprehensive overview of the problem, providing a high-level description of how the system operates. It includes a detailed analysis of the phenomena involving the world, the machine, or both, alongside a thorough exploration of the domain, including its assumptions, dependencies, and constraints. Additionally, it examines various scenarios and outlines the characteristics of both the product and its users.
+\paragraph{Specific Requirements:} The third section focuses on an in-depth analysis of the specific requirements necessary to achieve the project goals. It provides detailed insights into external interface requirements, functional requirements, and performance requirements, as well as additional information valuable for developers, including hardware and software constraints.
+\paragraph{Formal Analysis Using Alloy:} The fourth section provides a formal description of the world phenomena using Alloy. Its primary purpose is to validate the accuracy of the model described in the preceding sections, presenting the results of the conducted checks and meaningful assertions.
+\paragraph{Effort Spent:} The fifth section details the contributions of each group member, outlining the time spent and individual efforts dedicated to the creation of this document, organized by section.
+\paragraph{References:} The final section serves as a bibliography, providing references to all documents, software, and additional resources utilized in the creation of this document.
